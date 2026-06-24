@@ -115,7 +115,7 @@ export default function Chat() {
   useEffect(() => {
     if (!currentUser?.id) return;
 
-    const socket = io(import.meta.env.VITE_BACKEND_URL || "http://localhost:5000"); //  Fixed!
+    const socket = io(import.meta.env.VITE_BACKEND_URL || "https://chat-app-hioy.onrender.com"); //  Fixed!
     socketRef.current = socket;
 
     socket.on("connect", () => {
