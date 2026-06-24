@@ -134,7 +134,7 @@ router.get("/users", verifyToken, async (_req, res) => {
   try {
     const usersSnapshot = await db.collection("users").get();
 
-    const users = usersSnapshot.docs.map((userDoc) => {
+    const users = usersSnapshot.docs.map((userDoc: any) => {
       const userData = userDoc.data();
       return {
         id: userDoc.id,

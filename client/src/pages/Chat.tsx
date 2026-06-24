@@ -354,10 +354,21 @@ export default function Chat() {
   };
 
   return (
-    <div style={{ display: "flex", height: "100vh" }}>
+    <div style={{ display: "flex", height: "100vh", overflow: "hidden" }}>
       
       {/* SIDEBAR */}
-      <div style={{ width: "25%", borderRight: "1px solid #ccc", padding: "15px", backgroundColor: "#f8f9fa", overflowY: "auto", height: "100vh" }}>
+      <div 
+        style={{ 
+          width: selectedUser ? "30%" : "100%", 
+          borderRight: selectedUser ? "1px solid #ccc" : "none", 
+          padding: "15px", 
+          backgroundColor: "#f8f9fa", 
+          overflowY: "auto", 
+          height: "100vh",
+          transition: "width 0.3s ease, border-right 0.3s ease",
+          boxSizing: "border-box"
+        }}
+      >
         <h2>Chats</h2>
         <input
           type="text"
@@ -372,7 +383,6 @@ export default function Chat() {
           const unread = unreadCounts[u.id] || 0;
           return (
             <div key={u.id} onClick={() => setSelectedUser(u)} style={{ display: "flex", alignItems: "center", padding: "12px", marginBottom: "8px", borderRadius: "10px", cursor: "pointer", background: selectedUser?.id === u.id ? "#e6f4ff" : "white", boxShadow: "0 1px 4px rgba(0,0,0,0.1)" }}>
-              {/* FIXED: Removed the invalid 'center' property right here */}
               <div style={{ width: "40px", height: "40px", borderRadius: "50%", backgroundColor: "#0088cc", color: "white", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: "bold", marginRight: "10px", flexShrink: 0 }}>
                 {u.username.charAt(0).toUpperCase()}
               </div>
@@ -389,119 +399,136 @@ export default function Chat() {
       </div>
 
       {/* CHAT AREA */}
-      <div style={{ width: "75%", display: "flex", flexDirection: "column", height: "100vh" }}>
-        
-        {/* CHAT HEADER */}
-        <div style={{ padding: "15px", borderBottom: "1px solid #ddd", backgroundColor: "white", position: "sticky", top: 0, zIndex: 100, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          {selectedUser ? (
-            <>
+      {selectedUser && (
+        <div style={{ width: "70%", display: "flex", flexDirection: "column", height: "100vh" }}>
+          
+          {/* CHAT HEADER */}
+          <div style={{ padding: "15px", borderBottom: "1px solid #ddd", backgroundColor: "white", position: "sticky", top: 0, zIndex: 100, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div style={{ display: "flex", alignItems: "center" }}>
+              <button 
+                onClick={() => setSelectedUser(null)} 
+                style={{ 
+                  background: "none", 
+                  border: "none", 
+                  fontSize: "20px", 
+                  cursor: "pointer", 
+                  marginRight: "15px", 
+                  padding: "5px 8px", 
+                  borderRadius: "50%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  outline: "none"
+                }}
+                title="Go back to chat list"
+              >
+                ⬅️
+              </button>
               <div>
                 <div style={{ fontWeight: "bold", fontSize: "18px" }}>{selectedUser.username}</div>
                 <div style={{ fontSize: "13px", color: "gray" }}>
                   {onlineUsers.includes(String(selectedUser.id)) ? "online" : selectedUser.last_seen ? `last seen ${new Date(selectedUser.last_seen).toLocaleString()}` : "offline"}
                 </div>
               </div>
-              <div style={{ display: "flex", gap: "20px", paddingRight: "10px" }}>
-                <button onClick={() => startCall(true)} style={{ background: "none", border: "none", fontSize: "22px", cursor: "pointer", outline: "none" }}>📹</button>
-                <button onClick={() => startCall(false)} style={{ background: "none", border: "none", fontSize: "20px", cursor: "pointer", outline: "none" }}>📞</button>
+            </div>
+            <div style={{ display: "flex", gap: "20px", paddingRight: "10px" }}>
+              <button onClick={() => startCall(true)} style={{ background: "none", border: "none", fontSize: "22px", cursor: "pointer", outline: "none" }}>📹</button>
+              <button onClick={() => startCall(false)} style={{ background: "none", border: "none", fontSize: "20px", cursor: "pointer", outline: "none" }}>📞</button>
+            </div>
+          </div>
+
+          {/* INCOMING CALL UI BANNER */}
+          {isReceivingCall && (
+            <div style={{ backgroundColor: "#2AABEE", padding: "15px", color: "white", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span>Incoming {callTypeVideo ? "Video" : "Voice"} Call from <b>{callerName}</b>...</span>
+              <div>
+                <button onClick={acceptCall} style={{ backgroundColor: "#12CF12", color: "white", border: "none", padding: "8px 16px", borderRadius: "20px", marginRight: "10px", cursor: "pointer" }}>Answer</button>
+                <button onClick={() => terminateCallStreams(true)} style={{ backgroundColor: "#FF4E74", color: "white", border: "none", padding: "8px 16px", borderRadius: "20px", cursor: "pointer" }}>Decline</button>
               </div>
-            </>
-          ) : (
-            <div style={{ fontWeight: "bold", fontSize: "16px", color: "gray" }}>Select a user to start chatting</div>
+            </div>
           )}
-        </div>
 
-        {/* INCOMING CALL UI BANNER */}
-        {isReceivingCall && (
-          <div style={{ backgroundColor: "#2AABEE", padding: "15px", color: "white", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span>Incoming {callTypeVideo ? "Video" : "Voice"} Call from <b>{callerName}</b>...</span>
-            <div>
-              <button onClick={acceptCall} style={{ backgroundColor: "#12CF12", color: "white", border: "none", padding: "8px 16px", borderRadius: "20px", marginRight: "10px", cursor: "pointer" }}>Answer</button>
-              <button onClick={() => terminateCallStreams(true)} style={{ backgroundColor: "#FF4E74", color: "white", border: "none", padding: "8px 16px", borderRadius: "20px", cursor: "pointer" }}>Decline</button>
+          {/* STREAM MODAL WINDOW */}
+          {callActive && (
+            <div style={{ position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh", backgroundColor: "rgba(0,0,0,0.9)", zIndex: 999, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+              <div style={{ position: "relative", width: "80%", height: "70%", backgroundColor: "#222", borderRadius: "12px", overflow: "hidden" }}>
+                <video ref={remoteVideoRef} autoPlay playsInline style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                {callTypeVideo && <video ref={localVideoRef} autoPlay muted playsInline style={{ position: "absolute", top: "20px", right: "20px", width: "150px", height: "110px", borderRadius: "8px", objectFit: "cover", border: "2px solid white" }} />}
+              </div>
+              <button onClick={() => terminateCallStreams(true)} style={{ marginTop: "20px", width: "60px", height: "60px", borderRadius: "50%", border: "none", backgroundColor: "#FF4E74", color: "white", fontSize: "24px", cursor: "pointer" }}>🛑</button>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* STREAM MODAL WINDOW */}
-        {callActive && (
-          <div style={{ position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh", backgroundColor: "rgba(0,0,0,0.9)", zIndex: 999, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-            <div style={{ position: "relative", width: "80%", height: "70%", backgroundColor: "#222", borderRadius: "12px", overflow: "hidden" }}>
-              <video ref={remoteVideoRef} autoPlay playsInline style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-              {callTypeVideo && <video ref={localVideoRef} autoPlay muted playsInline style={{ position: "absolute", top: "20px", right: "20px", width: "150px", height: "110px", borderRadius: "8px", objectFit: "cover", border: "2px solid white" }} />}
-            </div>
-            <button onClick={() => terminateCallStreams(true)} style={{ marginTop: "20px", width: "60px", height: "60px", borderRadius: "50%", border: "none", backgroundColor: "#FF4E74", color: "white", fontSize: "24px", cursor: "pointer" }}>🛑</button>
-          </div>
-        )}
+          {/* MESSAGES LAYER CONTAINER */}
+          <div ref={messagesContainerRef} style={{ flex: 1, height: "0", overflowY: "auto", padding: "20px", backgroundColor: "#E5DDD5", borderRadius: "10px" }}>
+            {messages.map((m) => {
+              const isMine = String(m.sender_id) === String(currentUser?.id);
+              const isOpponentOnline = onlineUsers.includes(String(m.receiver_id));
 
-        {/* MESSAGES LAYER CONTAINER */}
-        <div ref={messagesContainerRef} style={{ flex: 1, height: "0", overflowY: "auto", padding: "20px", backgroundColor: "#E5DDD5", borderRadius: "10px" }}>
-          {messages.map((m) => {
-            const isMine = String(m.sender_id) === String(currentUser?.id);
-            const isOpponentOnline = onlineUsers.includes(String(m.receiver_id));
-
-            return (
-              <div key={m.id} style={{ display: "flex", justifyContent: isMine ? "flex-end" : "flex-start", marginBottom: "10px" }}>
-                <div style={{ backgroundColor: isMine ? "#2AABEE" : "#FFFFFF", color: isMine ? "white" : "black", padding: "8px 12px", borderRadius: isMine ? "18px 18px 4px 18px" : "18px 18px 18px 4px", maxWidth: "70%", wordBreak: "break-word", boxShadow: "0 1px 2px rgba(0,0,0,0.15)" }}>
-                  <div>{m.encrypted_message}</div>
-                  <div style={{ fontSize: "11px", marginTop: "4px", textAlign: "right", opacity: 0.8, display: "flex", alignItems: "center", justifyContent: "flex-end" }}>
-                    {new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                    {isMine && (
-                      <span 
-                        style={{ 
-                          marginLeft: "5px", 
-                          fontSize: "14px", 
-                          fontWeight: "bold", 
-                          lineHeight: "1", 
-                          color: m.is_read ? "#006699" : "#FFFFFF" 
-                        }}
-                      >
-                        {m.is_read ? "✓✓" : isOpponentOnline ? "✓✓" : "✓"}
-                      </span>
-                    )}
+              return (
+                <div key={m.id} style={{ display: "flex", justifyContent: isMine ? "flex-end" : "flex-start", marginBottom: "10px" }}>
+                  <div style={{ backgroundColor: isMine ? "#2AABEE" : "#FFFFFF", color: isMine ? "white" : "black", padding: "8px 12px", borderRadius: isMine ? "18px 18px 4px 18px" : "18px 18px 18px 4px", maxWidth: "70%", wordBreak: "break-word", boxShadow: "0 1px 2px rgba(0,0,0,0.15)" }}>
+                    <div>{m.encrypted_message}</div>
+                    <div style={{ fontSize: "11px", marginTop: "4px", textAlign: "right", opacity: 0.8, display: "flex", alignItems: "center", justifyContent: "flex-end" }}>
+                      {new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                      {isMine && (
+                        <span 
+                          style={{ 
+                            marginLeft: "5px", 
+                            fontSize: "14px", 
+                            fontWeight: "bold", 
+                            lineHeight: "1", 
+                            color: m.is_read ? "#006699" : "#FFFFFF" 
+                          }}
+                        >
+                          {m.is_read ? "✓✓" : isOpponentOnline ? "✓✓" : "✓"}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
+              );
+            })}
+            <div ref={messagesEndRef} />
+          </div>
+
+          {/* INPUT ACTIONS DOCK */}
+          <div style={{ position: "relative", backgroundColor: "#f0f0f0", padding: "10px" }}>
+            <input type="file" ref={docInputRef} style={{ display: "none" }} accept=".pdf,.doc,.docx,.txt" onChange={(e) => handleFileUpload(e, "profilePic")} />
+            <input type="file" ref={cameraInputRef} style={{ display: "none" }} accept="image/*" capture="user" onChange={(e) => handleFileUpload(e, "profilePic")} />
+            <input type="file" ref={galleryInputRef} style={{ display: "none" }} accept="image/*,video/*" onChange={(e) => handleFileUpload(e, "profilePic")} />
+            <input type="file" ref={audioInputRef} style={{ display: "none" }} accept="audio/*" onChange={(e) => handleFileUpload(e, "profilePic")} />
+
+            {showEmojiPicker && (
+              <div style={{ position: "absolute", bottom: "70px", left: "10px", zIndex: 200 }}>
+                <EmojiPicker onEmojiClick={(data) => setText((prev) => prev + data.emoji)} theme={Theme.LIGHT} emojiStyle={EmojiStyle.NATIVE} lazyLoadEmojis={true} height={350} width={340} />
               </div>
-            );
-          })}
-          <div ref={messagesEndRef} />
+            )}
+
+            {showAttachmentMenu && (
+              <div style={{ position: "absolute", bottom: "70px", right: "110px", backgroundColor: "white", borderRadius: "12px", boxShadow: "0 4px 15px rgba(0,0,0,0.2)", padding: "15px", display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "15px", zIndex: 200, width: "220px" }}>
+                <div onClick={() => docInputRef.current?.click()} style={{ display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer" }}><div style={{ width: "45px", height: "45px", borderRadius: "50%", backgroundColor: "#7F66FF", color: "white", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "20px" }}>📄</div><span style={{ fontSize: "11px", marginTop: "4px" }}>Document</span></div>
+                <div onClick={() => cameraInputRef.current?.click()} style={{ display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer" }}><div style={{ width: "45px", height: "45px", borderRadius: "50%", backgroundColor: "#FF4E74", color: "white", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "20px" }}>📷</div><span style={{ fontSize: "11px", marginTop: "4px" }}>Camera</span></div>
+                <div onClick={() => galleryInputRef.current?.click()} style={{ display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer" }}><div style={{ width: "45px", height: "45px", borderRadius: "50%", backgroundColor: "#12CF12", color: "white", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "20px" }}>🖼️</div><span style={{ fontSize: "11px", marginTop: "4px" }}>Gallery</span></div>
+                <div onClick={() => audioInputRef.current?.click()} style={{ display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer" }}><div style={{ width: "45px", height: "45px", borderRadius: "50%", backgroundColor: "#FFA114", color: "white", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "20px" }}>🎵</div><span style={{ fontSize: "11px", marginTop: "4px" }}>Audio</span></div>
+                <div onClick={handleLocationAccess} style={{ display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer" }}><div style={{ width: "45px", height: "45px", borderRadius: "50%", backgroundColor: "#06D755", color: "white", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "20px" }}>📍</div><span style={{ fontSize: "11px", marginTop: "4px" }}>Location</span></div>
+                <div onClick={handleContactAccess} style={{ display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer" }}><div style={{ width: "45px", height: "45px", borderRadius: "50%", backgroundColor: "#0099FF", color: "white", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "20px" }}>👤</div><span style={{ fontSize: "11px", marginTop: "4px" }}>Contact</span></div>
+              </div>
+            )}
+
+            <form onSubmit={sendMessage} style={{ display: "flex", alignItems: "center" }}>
+              <div style={{ flex: 1, display: "flex", alignItems: "center", backgroundColor: "white", borderRadius: "25px", padding: "4px 12px", boxShadow: "0 1px 2px rgba(0,0,0,0.1)" }}>
+                <button type="button" onClick={() => { setShowEmojiPicker(!showEmojiPicker); setShowAttachmentMenu(false); }} style={{ background: "none", border: "none", fontSize: "20px", cursor: "pointer", padding: "4px", outline: "none" }}>😀</button>
+                <input value={text} onChange={(e) => setText(e.target.value)} placeholder="Type a message" style={{ flex: 1, border: "none", padding: "10px", fontSize: "15px", outline: "none", marginLeft: "5px" }} />
+                <button type="button" onClick={() => { setShowAttachmentMenu(!showAttachmentMenu); setShowEmojiPicker(false); }} style={{ background: "none", border: "none", fontSize: "20px", cursor: "pointer", padding: "4px", outline: "none", color: "#555" }}>📎</button>
+                <button type="button" onClick={() => cameraInputRef.current?.click()} style={{ background: "none", border: "none", fontSize: "20px", cursor: "pointer", padding: "4px", marginLeft: "8px", outline: "none", color: "#555" }}>📷</button>
+              </div>
+              <button type="submit" style={{ width: "48px", height: "48px", borderRadius: "50%", border: "none", backgroundColor: "#2AABEE", color: "white", fontSize: "20px", cursor: "pointer", marginLeft: "8px", display: "flex", alignItems: "center", justifyContent: "center", outline: "none", flexShrink: 0 }}>➤</button>
+            </form>
+          </div>
+
         </div>
-
-        {/* INPUT ACTIONS DOCK */}
-        <div style={{ position: "relative", backgroundColor: "#f0f0f0", padding: "10px" }}>
-          <input type="file" ref={docInputRef} style={{ display: "none" }} accept=".pdf,.doc,.docx,.txt" onChange={(e) => handleFileUpload(e, "profilePic")} />
-          <input type="file" ref={cameraInputRef} style={{ display: "none" }} accept="image/*" capture="user" onChange={(e) => handleFileUpload(e, "profilePic")} />
-          <input type="file" ref={galleryInputRef} style={{ display: "none" }} accept="image/*,video/*" onChange={(e) => handleFileUpload(e, "profilePic")} />
-          <input type="file" ref={audioInputRef} style={{ display: "none" }} accept="audio/*" onChange={(e) => handleFileUpload(e, "profilePic")} />
-
-          {showEmojiPicker && (
-            <div style={{ position: "absolute", bottom: "70px", left: "10px", zIndex: 200 }}>
-              <EmojiPicker onEmojiClick={(data) => setText((prev) => prev + data.emoji)} theme={Theme.LIGHT} emojiStyle={EmojiStyle.NATIVE} lazyLoadEmojis={true} height={350} width={340} />
-            </div>
-          )}
-
-          {showAttachmentMenu && (
-            <div style={{ position: "absolute", bottom: "70px", right: "110px", backgroundColor: "white", borderRadius: "12px", boxShadow: "0 4px 15px rgba(0,0,0,0.2)", padding: "15px", display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "15px", zIndex: 200, width: "220px" }}>
-              <div onClick={() => docInputRef.current?.click()} style={{ display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer" }}><div style={{ width: "45px", height: "45px", borderRadius: "50%", backgroundColor: "#7F66FF", color: "white", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "20px" }}>📄</div><span style={{ fontSize: "11px", marginTop: "4px" }}>Document</span></div>
-              <div onClick={() => cameraInputRef.current?.click()} style={{ display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer" }}><div style={{ width: "45px", height: "45px", borderRadius: "50%", backgroundColor: "#FF4E74", color: "white", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "20px" }}>📷</div><span style={{ fontSize: "11px", marginTop: "4px" }}>Camera</span></div>
-              <div onClick={() => galleryInputRef.current?.click()} style={{ display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer" }}><div style={{ width: "45px", height: "45px", borderRadius: "50%", backgroundColor: "#12CF12", color: "white", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "20px" }}>🖼️</div><span style={{ fontSize: "11px", marginTop: "4px" }}>Gallery</span></div>
-              <div onClick={() => audioInputRef.current?.click()} style={{ display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer" }}><div style={{ width: "45px", height: "45px", borderRadius: "50%", backgroundColor: "#FFA114", color: "white", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "20px" }}>🎵</div><span style={{ fontSize: "11px", marginTop: "4px" }}>Audio</span></div>
-              <div onClick={handleLocationAccess} style={{ display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer" }}><div style={{ width: "45px", height: "45px", borderRadius: "50%", backgroundColor: "#06D755", color: "white", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "20px" }}>📍</div><span style={{ fontSize: "11px", marginTop: "4px" }}>Location</span></div>
-              <div onClick={handleContactAccess} style={{ display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer" }}><div style={{ width: "45px", height: "45px", borderRadius: "50%", backgroundColor: "#0099FF", color: "white", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "20px" }}>👤</div><span style={{ fontSize: "11px", marginTop: "4px" }}>Contact</span></div>
-            </div>
-          )}
-
-          <form onSubmit={sendMessage} style={{ display: "flex", alignItems: "center" }}>
-            <div style={{ flex: 1, display: "flex", alignItems: "center", backgroundColor: "white", borderRadius: "25px", padding: "4px 12px", boxShadow: "0 1px 2px rgba(0,0,0,0.1)" }}>
-              <button type="button" onClick={() => { setShowEmojiPicker(!showEmojiPicker); setShowAttachmentMenu(false); }} style={{ background: "none", border: "none", fontSize: "20px", cursor: "pointer", padding: "4px", outline: "none" }}>😀</button>
-              <input value={text} onChange={(e) => setText(e.target.value)} placeholder="Type a message" style={{ flex: 1, border: "none", padding: "10px", fontSize: "15px", outline: "none", marginLeft: "5px" }} />
-              <button type="button" onClick={() => { setShowAttachmentMenu(!showAttachmentMenu); setShowEmojiPicker(false); }} style={{ background: "none", border: "none", fontSize: "20px", cursor: "pointer", padding: "4px", outline: "none", color: "#555" }}>📎</button>
-              <button type="button" onClick={() => cameraInputRef.current?.click()} style={{ background: "none", border: "none", fontSize: "20px", cursor: "pointer", padding: "4px", marginLeft: "8px", outline: "none", color: "#555" }}>📷</button>
-            </div>
-            <button type="submit" style={{ width: "48px", height: "48px", borderRadius: "50%", border: "none", backgroundColor: "#2AABEE", color: "white", fontSize: "20px", cursor: "pointer", marginLeft: "8px", display: "flex", alignItems: "center", justifyContent: "center", outline: "none", flexShrink: 0 }}>➤</button>
-          </form>
-        </div>
-
-      </div>
+      )}
     </div>
   );
 }
