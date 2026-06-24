@@ -14,7 +14,16 @@ const serviceAccountPath = path.resolve(
 let isUsingMock = false;
 let serviceAccount: any = null;
 
-if (fs.existsSync(serviceAccountPath)) {
+if (process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
+  try {
+    serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
+    if (serviceAccount.project_id === "dummy-chat-app") {
+      isUsingMock = true;
+    }
+  } catch (err) {
+    isUsingMock = true;
+  }
+} else if (fs.existsSync(serviceAccountPath)) {
   try {
     serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, "utf-8"));
     if (serviceAccount.project_id === "dummy-chat-app") {
